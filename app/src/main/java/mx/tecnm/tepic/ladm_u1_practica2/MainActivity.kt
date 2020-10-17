@@ -1,9 +1,11 @@
 package mx.tecnm.tepic.ladm_u1_practica2
 
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.*
 import java.lang.Exception
@@ -30,18 +32,26 @@ class MainActivity : AppCompatActivity() {
                 }
             } else {
                 if (rdbtnsd.isChecked()) {
-                    if (guardarEnMemoriaExterna() == true) {
-                        AlertDialog.Builder(this).setTitle("ATENCION")
-                            .setMessage("ARCHIVO GUARDADO EN SD")
-                            .setPositiveButton("ok") { d, i -> d.dismiss() }
-                            .show()
+                    if (verificarPermisos() == true) {
+                        if (guardarEnMemoriaExterna() == true) {
+                            AlertDialog.Builder(this).setTitle("ATENCION")
+                                .setMessage("ARCHIVO GUARDADO EN SD")
+                                .setPositiveButton("ok") { d, i -> d.dismiss() }
+                                .show()
+                        } else {
+                            AlertDialog.Builder(this).setTitle("ERROR")
+                                .setMessage("NO SE PUDO GUARDAR ARCHIVO O NO HAY MEMORIA SD INSERTADA")
+                                .setPositiveButton("ok") { d, i -> d.dismiss() }
+                                .show()
+                        }
                     } else {
-                        AlertDialog.Builder(this).setTitle("ERROR")
-                            .setMessage("NO SE PUDO GUARDAR ARCHIVO O NO HAY MEMORIA SD INSERTADA")
+                        pedirPermiso()
+                        AlertDialog.Builder(this).setTitle("ATENCION")
+                            .setMessage("FAVOR DE VOLVER A GUARDAR EL ARCHIVO")
                             .setPositiveButton("ok") { d, i -> d.dismiss() }
                             .show()
                     }
-                }else{
+                } else {
                     AlertDialog.Builder(this).setTitle("ERROR")
                         .setMessage("NO SE HA SELECCIONADO NINGUN ALOJAMIENTO DE MEMORIA")
                         .setPositiveButton("ok") { d, i -> d.dismiss() }
@@ -88,6 +98,22 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private fun pedirPermiso() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 0)
+        }
+    }
+
+    private fun verificarPermisos(): Boolean {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            == PackageManager.PERMISSION_GRANTED) {
+            return true
+        } else {
+            return false
+        }
+    }
+
     // -------------------- FUNCIONES ABRIR -------------------------
     private fun abrirDesdeMemoriaExterna(): String {
         var contenido = ""
@@ -125,6 +151,7 @@ class MainActivity : AppCompatActivity() {
     //----------------- FUNCIONES GUARDAR ----------------------
     private fun guardarEnMemoriaExterna() : Boolean {
         nomArchivo = etarchivo.text.toString()
+
         try {
             if (Environment.getExternalStorageState() != Environment.MEDIA_MOUNTED) {
                 return false;
